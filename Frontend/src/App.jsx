@@ -12,11 +12,13 @@ import AuthProvider from './AuthContext.jsx';
 import Wishlist from './wishlist.jsx';
 import Admin from "./ProductAddForm.jsx";
 import EditProductForm from "./EditProductForm.jsx";
-import PublicRoute from './PublicRoute.jsx'; // ✅ नया इम्पोर्ट
+import PublicRoute from './PublicRoute.jsx';
 
 import Productorder from './productorder.jsx';
-import  GetMyOrders  from './GetMyOrders.jsx'; 
+import GetMyOrders from './GetMyOrders.jsx'; 
 import AllOrders from './AllOrders.jsx';
+import SuccessPage from './SuccessPage.jsx';
+import CancelPage from './CancelPage.jsx';
 
 
 
@@ -80,7 +82,7 @@ const router = createBrowserRouter([
         path: '/GetMyOrders',
         element: (
           <ProtectedRoute>
-            < GetMyOrders />
+            <GetMyOrders />
           </ProtectedRoute>
         ),
       },
@@ -89,10 +91,21 @@ const router = createBrowserRouter([
         path: '/AllOrders',
         element: (
           <ProtectedRoute>
-            < AllOrders />
+            <AllOrders />
           </ProtectedRoute>
         ),
       },
+
+      {
+        path: '/success',
+        element: <SuccessPage />,
+      },
+
+      {
+        path: '/cancel',
+        element: <CancelPage />,
+      },
+
       {
         path: 'cart',
         element: (
@@ -106,7 +119,7 @@ const router = createBrowserRouter([
         path: '/wishList',
         element: (
           <ProtectedRoute>
-            < Wishlist />
+            <Wishlist />
           </ProtectedRoute>
         ),
       },

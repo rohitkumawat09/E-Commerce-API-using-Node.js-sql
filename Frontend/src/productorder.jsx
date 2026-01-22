@@ -20,7 +20,7 @@ const ProductOrder = () => {
   const [quantity, setQuantity] = useState(initialQuantity);
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("stripe");
   const [loading, setLoading] = useState(false); 
   const [message, setMessage] = useState(""); 
   const [error, setError] = useState("");
@@ -34,8 +34,17 @@ const ProductOrder = () => {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
-    if (!address || !phone || !paymentMethod) {
-      setError("Please fill all required fields.");
+    // Validate all required fields
+    if (!address || !address.trim()) {
+      setError("❌ Please enter a delivery address");
+      return;
+    }
+    if (!phone || !phone.trim()) {
+      setError("❌ Please enter a phone number");
+      return;
+    }
+    if (!paymentMethod) {
+      setError("❌ Please select a payment method");
       return;
     }
 
@@ -44,26 +53,71 @@ const ProductOrder = () => {
     setError("");
 
     try {
-      await instance.post(
-        "/orders/create",
-        {
-          productId: product.id,
-          quantity,
-          address,
-          phone,
-          paymentMethod,
-        },
-        { withCredentials: true }
-      );
+      if (paymentMethod === "stripe") {
+        // Use Stripe for payment
+        console.log("Starting Stripe payment...");
+        const response = await instance.post(
+          "/payment/create-checkout-session",
+          {
+            productId: product.id,
+            quantity,
+            address,
+            phone,
+          },
+          { withCredentials: true }
+        );
 
-      setMessage("✅ Order placed successfully!");
-      updateCartQuantityAfterOrder(product.id, quantity);
+        console.log("Stripe response:", response);
 
-      setTimeout(() => navigate("/"), 1500); // redirect after short delay
+        // Redirect to Stripe Checkout
+        if (response.data && response.data.sessionId) {
+          // Check if Stripe is available
+          if (typeof window.Stripe === "undefined") {
+            setError("❌ Stripe failed to load. Please refresh the page.");
+            setLoading(false);
+            return;
+          }
+
+          const stripe = window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+          const { error } = await stripe.redirectToCheckout({ 
+            sessionId: response.data.sessionId 
+          });
+          
+          if (error) {
+            setError("❌ Stripe Error: " + error.message);
+            setLoading(false);
+          }
+        } else {
+          setError("❌ Failed to create payment session. Please try again.");
+          setLoading(false);
+        }
+      } else {
+        // Create order for other payment methods (UPI, Netbanking, COD)
+        console.log("Creating order with payment method:", paymentMethod);
+        const response = await instance.post(
+          "/orders/create",
+          {
+            productId: product.id,
+            quantity,
+            address,
+            phone,
+            paymentMethod,
+          },
+          { withCredentials: true }
+        );
+
+        console.log("Order response:", response);
+        
+        setMessage("✅ Order placed successfully!");
+        updateCartQuantityAfterOrder(product.id, quantity);
+
+        setTimeout(() => navigate("/"), 1500);
+      }
     } catch (err) {
       console.error("Order placement error:", err);
-      setError("❌ Failed to place order. Please try again.");
-      setLoading(false); // re-enable button for retry
+      const errorMsg = err.response?.data?.error || err.message || "Failed to place order. Please try again.";
+      setError("❌ " + errorMsg);
+      setLoading(false);
     }
   };
 
@@ -124,12 +178,22 @@ const ProductOrder = () => {
             <input
               type="radio"
               name="payment"
-              value="upi"
+              value="stripe"
               required
+              checked={paymentMethod === "stripe"}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />{" "}
+            💳 Stripe (Card Payment)
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="payment"
+              value="upi"
               checked={paymentMethod === "upi"}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />{" "}
-            UPI
+            📱 UPI
           </label>
           <label>
             <input
@@ -139,7 +203,7 @@ const ProductOrder = () => {
               checked={paymentMethod === "netbanking"}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />{" "}
-            Net Banking
+            🏦 Net Banking
           </label>
           <label>
             <input
@@ -149,24 +213,24 @@ const ProductOrder = () => {
               checked={paymentMethod === "cod"}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />{" "}
-            Cash on Delivery
+            📦 Cash on Delivery
           </label>
         </div>
 
         {message && <p style={{ color: "green" }}>{message}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
 
-   <button
-  type="submit"
-  className="place-order-btn"
-  disabled={loading}
-  style={{
-    cursor: loading ? "not-allowed" : "pointer",
-    opacity: loading ? 0.7 : 1,
-  }}
->
-  {loading ? "Placing Order..." : "Place Order"}
-</button>
+        <button
+          type="submit"
+          className="place-order-btn"
+          disabled={loading}
+          style={{
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.7 : 1,
+          }}
+        >
+          {loading ? "Processing..." : "Place Order"}
+        </button>
 
       </form>
     </div>

@@ -6,6 +6,21 @@ export const createOrder = async (req, res) => {
     const { productId, quantity, address, phone, paymentMethod } = req.body;
     const userId = req.user.id;
 
+    // Validate input
+    if (!productId || !quantity || !address || !phone || !paymentMethod) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Map payment methods to short codes (single character for database constraint)
+    const paymentMethodMap = {
+      netbanking: "N",
+      card: "C",
+      upi: "U",
+      wallet: "W",
+      cod: "D"
+    };
+    const shortenedPaymentMethod = paymentMethodMap[paymentMethod?.toLowerCase()] || paymentMethod?.charAt(0).toUpperCase();
+
     // Check product exists
     const [product] = await db.query(
       "SELECT id FROM products WHERE id = ?",
@@ -14,6 +29,17 @@ export const createOrder = async (req, res) => {
 
     if (product.length === 0) {
       return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Validate quantity and address
+    if (quantity <= 0) {
+      return res.status(400).json({ error: "Quantity must be greater than 0" });
+    }
+    if (!address.trim()) {
+      return res.status(400).json({ error: "Address cannot be empty" });
+    }
+    if (!phone.trim() || phone.length < 10) {
+      return res.status(400).json({ error: "Valid phone number required" });
     }
 
     // Insert order
@@ -27,7 +53,7 @@ export const createOrder = async (req, res) => {
         quantity,
         address,
         phone,
-        paymentMethod,
+        shortenedPaymentMethod,
         "Pending"
       ]
     );
@@ -36,7 +62,7 @@ export const createOrder = async (req, res) => {
 
   } catch (error) {
     console.error("Order creation error:", error);
-    res.status(500).json({ error: "Failed to place order" });
+    res.status(500).json({ error: error.message || "Failed to place order" });
   }
 };
 
