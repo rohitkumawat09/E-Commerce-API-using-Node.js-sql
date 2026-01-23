@@ -18,14 +18,19 @@ const PORT = process.env.PORT || 4000;
 
 /* ================= CORS ================= */
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+
+
+   process.env.FRONTEND_URL,
   process.env.LOCAL_URL,
   process.env.DEPLOYED_FRONTEND_URL,
   process.env.VERCEL_URL,
   "http://localhost:5173",
   "http://localhost:4000",
   "http://127.0.0.1:5500",
-  " "
+ 
+ "http://localhost:3000",
+ "https://1scxwl1x-5173.inc1.devtunnels.ms",
+ "https://e-commerce-frontend-phi.vercel.app"
 ];
 
 const corsOptions = {

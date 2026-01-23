@@ -25,3 +25,28 @@ try {
 }
 
 export default db;
+
+
+
+//  import pkg from "pg";
+// const { Pool } = pkg;
+// import dns from "dns";
+// import "dotenv/config";
+
+// // 🔥 FORCE IPv4 (THIS IS THE KEY FIX)
+// dns.setDefaultResultOrder("ipv4first");
+
+// const db = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: { rejectUnauthorized: false },
+// });
+
+// try {
+//   await db.query("SELECT 1");
+//   console.log("✅ PostgreSQL connected successfully");
+// } catch (error) {
+//   console.error("❌ PostgreSQL connection failed:", error.message);
+//   process.exit(1);
+// }
+
+// export default db;
